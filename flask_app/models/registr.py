@@ -6,6 +6,7 @@ import re
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9.+_-]+@[a-zA-Z0-9._-]+\.[a-zA-Z]+$')
 PASSWORD_REGEX = re.compile(r'^(?=.*\d)(?=.*[A-Z])[a-zA-Z\d]{8,45}$') # THANKS TA KOS
+NAME_REGEX = re.compile(r'^[a-zA-Z]{2,45}$')
 
 class Regisrtr:
     def __init__(self, data):
@@ -14,8 +15,8 @@ class Regisrtr:
         self.last_name = data['last_name']
         self.email = data['email']
         self.password = data['password']
-
-        self.account = []
+        self.created_at = data['created_at']
+        self.updated_at = data['updated_at']
 
     @classmethod 
     def save(cls, data):
@@ -24,31 +25,34 @@ class Regisrtr:
 
     @classmethod
     def get_by_id(cls,data):
-        query = "SELECT * FROM validations WHERE id = %(id)s"
-        return connectToMySQL('login_registration').query_db(query, data)
+        query = "SELECT * FROM validations WHERE id = %(id)s;"
+        result = connectToMySQL('login_registration').query_db(query, data)
+        if result == False  or len(result) < 1  :
+            return False
+        return cls(result[0])
 
     @classmethod
     def get_by_email(cls,data):
+        print(data['email'])
         query = "SELECT * FROM validations WHERE email = %(email)s;"
         result = connectToMySQL('login_registration').query_db(query,data)
-
-        if len(result) < 1:
+        if result == False  or len(result) < 1  :
             return False
         return cls(result[0])
 
     @staticmethod
     def validate_account(account):
         is_valid = True
-        if len(account['first_name']) < 2:
-            flash("First Name must be atleast 2 characters", 'error')
+        if not NAME_REGEX.match(account['first_name']):
+            flash("First Name must be atleast 2 characters and only letters", 'error')
             is_valid = False
-        if len(account['last_name']) < 2:
-            flash("Last Name must be atleast 2 characters", 'error')
+        if not NAME_REGEX.match(account['last_name']):
+            flash("Last Name must be atleast 2 characters and only letters", 'error')
             is_valid = False
         if not EMAIL_REGEX.match(account['email']):
             flash('Invalid email address!', 'error')
             is_valid = False
-        if Regisrtr.get_by_email(account) != False : #thanks TA Kos if its is false it found the email mif not theres not email
+        if Regisrtr.get_by_email(account) != False : #thanks TA Kos if its is false it found the email if not theres no email
             flash('Email already in use', 'error')
             is_valid = False
         if not PASSWORD_REGEX.match(account['password']):

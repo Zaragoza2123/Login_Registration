@@ -13,7 +13,11 @@ def index():
 
 @app.route('/home')
 def home_page():
-    return render_template('home.html', first_name = session['first_name'])
+    data = {
+        'id': session['account_id']
+    }
+    user = Regisrtr.get_by_id(data)
+    return render_template('home.html', user=user)
 
 @app.route('/create', methods=['POST'])
 def create_account():
@@ -29,25 +33,25 @@ def create_account():
     }
 
     account_id = Regisrtr.save(data)
-    print('+'*20)
-    print(account_id)
-    session['first_name'] = request.form['first_name']
-    session['login'] = True
+
+    session['account_id'] = account_id
+    
+
     return redirect('/home')
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST']) 
 def login():
     data = {"email": request.form['email']}
-    account_in_db = Regisrtr.get_by_email(data)
-    
-    if not account_in_db:
+    account = Regisrtr.get_by_email(data)
+    if not account:
         flash("Invalid Email/Password", 'bad')
         return redirect('/')
-    if not bcrypt.check_password_hash(account_in_db.password, request.form['password']):
+    if not bcrypt.check_password_hash(account.password, request.form['password']):
         flash("Invalid Email/Password",'bad')
         return redirect('/')
-    session['first_name'] = account_in_db.first_name
-    session['login'] = True
+
+    session['account_id'] = account.id
+    
 
     return redirect('/home')
 
